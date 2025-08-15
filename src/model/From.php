@@ -20,6 +20,7 @@ class From
         $this->is_bot = $data['is_bot'];
         $this->username = $data['username'];
         $this->first_name = $data['first_name'];
+        $this->last_name = $data['last_name'] ?? null;
         $this->language_code = $data['language_code'] ?? null;
         $this->is_premium = $data['is_premium'] ?? false;
     }

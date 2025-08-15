@@ -24,8 +24,14 @@ class Message
     public ?string $text = null;
     public Message|null $reply_to_message = null;
     public ?Document $document = null;
+    /**
+     * @var Photo[]|array|null
+     */
+    public ?array $photo = null;
+    public ?Video $video = null;
+    public ?Audio $audio = null;
     public ?array $entities = null;
-
+    public ?array $sticker = null;
 
     public function __construct(array $data)
     {
@@ -40,6 +46,21 @@ class Message
         }
         if (isset($data['document'])) {
             $this->document = new Document($data['document']);
+        }
+        if (isset($data['photo'])) {
+            $this->photo = [];
+            foreach ($data['photo'] as $key => $value) {
+                $this->photo[] = new Photo($value);
+            }
+        }
+        if (isset($data['video'])) {
+            $this->video = new Video($data['video']);
+        }
+        if (isset($data['audio'])) {
+            $this->audio = new Audio($data['audio']);
+        }
+        if (isset($data['sticker'])) {
+            $this->sticker = $data['sticker'];
         }
     }
 }
