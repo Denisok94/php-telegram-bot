@@ -6,6 +6,7 @@ use denisok94\telegram\model\Message;
 use denisok94\telegram\model\Event;
 
 /**
+ * https://botphp.ru/guides/perviy-bot/first-bot
  * https://botphp.ru/guides/perviy-bot/own-class-bot
  * ```php
  * $bot = new Bot([
@@ -181,7 +182,8 @@ class Bot
     //----------------------------
 
     /**
-     * Отправить текстовое сообщение
+     * Отправить сообщение
+     * @param array $data
      */
     public function sendMessage($data = [])
     {
@@ -189,18 +191,74 @@ class Bot
     }
 
     /**
+     * Отправить картинку
+     * ```php
+     * $file_path = __DIR__ . '/image.png';
+     * $res = $bot->sendDocument([
+     *  'chat_id' => $this->bot->getChatId(),
+     *  'caption' => 'Описание файла',
+     *  'photo' => curl_file_create($file_path, 'image/png', basename($file_path))
+     * ]);
+     * //
+     * $file_id = "FILE_ID_ОТ_ТЕЛЕГРАМ";
+     * $res = $bot->sendDocument([
+     *  'chat_id' => $this->bot->getChatId(),
+     *  'caption' => 'Описание файла',
+     *  'photo' => $file_id
+     * ]);
+     * ```
+     * @param array $data
+     */
+    public function sendPhoto(array $data)
+    {
+        return $this->sendApiQuery('sendphoto', $data, true);
+    }
+
+    /**
+     * Отправить файл
+     * ```php
+     * $file_path = __DIR__ . '/файлу.pdf';
+     * $res = $bot->sendDocument([
+     *  'chat_id' => $this->bot->getChatId(),
+     *  'caption' => 'Описание файла',
+     *  'document' => curl_file_create($file_path, 'application/pdf', basename($file_path)),
+     *  'parse_mode' => 'Markdown'
+     * ]);
+     * ```
+     * ```php
+     * $file_id = "FILE_ID_ОТ_ТЕЛЕГРАМ";
+     * $res = $bot->sendDocument([
+     *  'chat_id' => $this->bot->getChatId(),
+     *  'caption' => 'Описание файла',
+     *  'document' => $file_id,
+     *  'parse_mode' => 'Markdown',
+     *  'protect_content' => true // Запретить сохранение и пересылку
+     * ]);
+     * ```
+     * @param array $data
+     */
+    public function sendDocument(array $data)
+    {
+        return $this->sendApiQuery('sendDocument', $data, true);
+    }
+
+    /**
      * отправляем запрос к API Telegram, функция получает метод отправки
      * запроса и массив данных, отправляет запрос и возвращает результат в виде массива.
-     * Подробней в http://botphp.ru/guides/perviy-bot/first-bot     
+     * @param string $method
+     * @param mixed $data
+     * @param bool $raw
+     * @return mixed|array
      */
-    public function sendApiQuery($method, $data = [])
+    public function sendApiQuery(string $method, $data = [], bool $raw = false)
     {
         $ch = curl_init('https://api.telegram.org/bot' . $this->token . '/' . $method);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query($data),
-            CURLOPT_SSL_VERIFYPEER => 0,
-            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_POSTFIELDS => $raw ? $data : http_build_query($data),
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false,
             CURLOPT_TIMEOUT => 10
         ]);
         $res = json_decode(curl_exec($ch), true);
