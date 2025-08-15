@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace denisok94\telegram\bot;
+namespace denisok94\telegram;
 
 /**
  * Class for validating the integrity of initData received from a Telegram mini-application.

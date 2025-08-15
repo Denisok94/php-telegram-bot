@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "denisok94\\telegram\\bot\\": "src/"
+            "denisok94\\telegram\\": "src"
         }
     }
 }

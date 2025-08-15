@@ -1,75 +1,142 @@
 <?php
 
-namespace denisok94\telegram\bot;
+namespace denisok94\telegram;
+
+use denisok94\telegram\model\Message;
+use denisok94\telegram\model\Event;
 
 /**
  * https://botphp.ru/guides/perviy-bot/own-class-bot
  */
 class Bot
 {
-    //бот токен.
-    private $token;
-    //Данные которые мы получим через webhook
-    public $data = [];
-    //Массив с данными о пользователе у которого диалог с ботом
-    public $user = [];
-    public $chat = [];
+    /**
+     * бот токен.
+     * @var string
+     */
+    private string $token;
+    /**
+     * имя бота
+     * @var string
+     */
+    public string $bot_name;
+    /**
+     * id админа(создателя)
+     * @var int|null
+     */
+    public int|null $admin_id = null;
+    /**
+     * Данные которые мы получим через webhook
+     * @var array
+     */
+    public array $data = [];
+    public int|null $update_id = null;
+    /**
+     * @var Message
+     */
+    public Message|null $message = null;
+
+    /**
+     * @var Event
+     */
+    public Event|null $event = null;
+    /**
+     * @var string|bool callback_query|inline_query|my_chat_member|message|document|bot_command|object_message
+     */
+    public string|bool $type;
+
     //создаем экземпляр бота, при создании бота указываем токен
-    public function __construct($token)
+
+    /**
+     * ```php
+     * $bot = new Bot([
+     *  'bot_token' => '...', 
+     *  'bot_name' => 'MyBot'
+     * ]);
+     * ```
+     * @param array $parama
+     */
+    public function __construct(array $parama)
     {
-        //сохраняем в свойства полученный токен
-        $this->token = $token;
-        //получаем данные от webhook
-        $this->data = json_decode(file_get_contents('php://input'), true);
+        $this->token = $parama['bot_token'];
+        $this->bot_name = $parama['bot_name'] ?? '';
+        $this->admin_id = $parama['admin_id'] ?? null;
+    }
+
+    /**
+     * Данные которые мы получим через webhook/
+     * ```php
+     * $bot->setData(file_get_contents('php://input'));
+     * ```
+     * @param string $data json
+     * @return self
+     */
+    public function setData(string $data): self
+    {
+        $this->data = json_decode($data, true);
         if ($this->data == false || $this->data == null) {
             $this->data = [];
         }
-        //записываем информация о пользователе
-        $this->setUser();
+        $this->parseMessage();
+        return $this;
     }
 
-    //Функция что бы установить пользователя в свойство user
-    public function setUser()
+    public function parseMessage(): self
     {
-        if ($this->getType() == "callback_query") {
-            $this->user = $this->data['callback_query']['from'];
-        } elseif ($this->getType() == "inline_query") {
-            $this->user = $this->data['inline_query']['from'];
-        } else {
-            if (isset($this->data['message'])) {
-                $this->user = $this->data['message']['from'];
-            } else {
-                $this->user = null;
+        if (isset($this->data['update_id'])) {
+            $this->update_id = $this->data['update_id'];
+            if ($this->type = $this->getType()) {
+                switch ($this->type) {
+                    case 'message':
+                    case 'document':
+                    case 'bot_command':
+                        $message = $this->data['message'];
+                        $this->message = new Message($message);
+                        $this->message->type = $this->type;
+                        break;
+                    case 'callback_query':
+                    case 'inline_query':
+                        $event = $this->data[$this->type];
+                        $this->event = new Event($event);
+                        $this->event->type = $this->type;
+                        $this->message = $this->event->message;
+                        break;
+                    case 'my_chat_member':
+                        break;
+                    default:
+                        break;
+                }
             }
         }
-        //исходя из типа полученного update записываем информацию о текущем чате
-        if ($this->getType() == "callback_query") {
-            $this->chat = $this->data['callback_query']['message']['chat'];
-        } elseif ($this->getType() == "inline_query") {
-            // $this->chat = $this->data['inline_query']['from'];
-        } else {
-            if (isset($this->data['message'])) {
-                $this->chat = $this->data['message']['chat'];
-            } else {
-                $this->chat = null;
-            }
-        }
+        return $this;
     }
 
-    //получение id чата
-    public function getUserId()
+    /**
+     * получение id чата
+     * @return int|null
+     */
+    public function getChatId(): int|null
     {
-        return $this->user['id'] ?? null;
+        return $this->message->chat->id ?? null;
     }
 
-    //получение id чата
-    public function getChatId()
+    /**
+     * функция что бы получить текст сообщения из полученных данных
+     * @return mixed|string|null
+     */
+    public function getText(): ?string
     {
-        return $this->chat['id'] ?? null;
+        return match ($this->type) {
+            "callback_query" => $this->event->data,
+            "inline_query" => $this->event->query,
+            default => $this->message->text,
+        };
     }
 
-    //Функция что бы получить тип сообщения
-    //Другие типы сообщений мы рассмотрим в следующих уроках
+    /**
+     * Функция что бы получить тип сообщения
+     * @return bool|string
+     */
     public function getType(): bool|string
     {
         if (isset($this->data['callback_query'])) {
@@ -96,16 +163,8 @@ class Bot
         }
     }
 
-    //функция что бы получить текст сообщения из полученных данных
-    public function getText(): string
-    {
-        if ($this->getType() == "callback_query") {
-            return $this->data['callback_query']['data'];
-        } elseif ($this->getType() == "inline_query") {
-            return $this->data['inline_query']['query'];
-        }
-        return $this->data['message']['text'];
-    }
+    //----------------------------
+
     /**
      * Отправить текстовое сообщение
      */
