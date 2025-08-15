@@ -7,6 +7,13 @@ use denisok94\telegram\model\Event;
 
 /**
  * https://botphp.ru/guides/perviy-bot/own-class-bot
+ * ```php
+ * $bot = new Bot([
+ *  'bot_token' => '...', 
+ *  'bot_name' => 'MyBot'
+ * ]);
+ * $bot->setData(file_get_contents('php://input'));
+ * ```
  */
 class Bot
 {
@@ -32,12 +39,12 @@ class Bot
     public array $data = [];
     public int|null $update_id = null;
     /**
-     * @var Message
+     * @var Message|null
      */
     public Message|null $message = null;
 
     /**
-     * @var Event
+     * @var Event|null
      */
     public Event|null $event = null;
     /**
@@ -90,6 +97,7 @@ class Bot
                     case 'message':
                     case 'document':
                     case 'bot_command':
+                    case 'object_message':
                         $message = $this->data['message'];
                         $this->message = new Message($message);
                         $this->message->type = $this->type;
@@ -145,22 +153,29 @@ class Bot
             return "inline_query";
         } elseif (isset($this->data['my_chat_member'])) {
             return "my_chat_member";
-        } elseif (isset($this->data['message']['document'])) {
-            return "document";
-        } elseif (isset($this->data['message']['entities'])) {
-            $entities = $this->data['message']['entities'][0];
-            if (isset($entities['type']) && $entities['type'] == 'bot_command') {
-                return "bot_command";
+        } elseif (isset($this->data['message'])) {
+            $message = $this->data['message'];
+            if (isset($message['document']) || isset($message['photo']) || isset($message['video']) || isset($message['audio'])) {
+                return "document";
+            } elseif (isset($message['entities'])) {
+                $entities = $message['entities'][0];
+                if (isset($entities['type']) && $entities['type'] == 'bot_command') {
+                    return "bot_command";
+                }
+                return "message";
+            } elseif (isset($message['text'])) {
+                return "message";
+            } else {
+                return "object_message";
             }
-            return "message";
-        } elseif (isset($this->data['message']['text'])) {
-            //если это простой текст боту, то вернем "message".
-            return "message";
-        } elseif (array_key_exists('message', $this->data)) {
-            return "object_message";
         } else {
             return false;
         }
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->admin_id ? ($this->message->from->id === $this->admin_id) : false;
     }
 
     //----------------------------
@@ -170,9 +185,9 @@ class Bot
      */
     public function sendMessage($data = [])
     {
-        $res = $this->sendApiQuery('sendMessage', $data);
-        return $res;
+        return $this->sendApiQuery('sendMessage', $data);
     }
+
     /**
      * отправляем запрос к API Telegram, функция получает метод отправки
      * запроса и массив данных, отправляет запрос и возвращает результат в виде массива.
