@@ -1,0 +1,26 @@
+{
+    "name": "denisok94/telegram-bot",
+    "description": "php telegram bot",
+    "keywords": ["php telegram bot", "telegram bot", "bot"],
+    "type": "library",
+    "license": "MIT",
+    "support": {
+        "source": "https://github.com/Denisok94/"
+    },
+    "authors": [{
+        "name": "Denisok94",
+        "email": "denisok94@inbox.ru"
+    }],
+    "require": {
+        "php": "^8.3",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "denisok94/helper-composer": ">=0.0.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "denisok94\\telegram\\bot\\": "src/"
+        }
+    }
+}
