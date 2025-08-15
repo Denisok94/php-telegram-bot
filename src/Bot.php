@@ -98,10 +98,19 @@ class Bot
                     case 'message':
                     case 'document':
                     case 'bot_command':
+                        $message = $this->data['message'];
+                        $this->message = new Message($message);
+                        $this->message->type = $this->type;
+                        break;
                     case 'object_message':
                         $message = $this->data['message'];
                         $this->message = new Message($message);
                         $this->message->type = $this->type;
+                        unset($message['message_id']);
+                        unset($message['date']);
+                        unset($message['from']);
+                        unset($message['chat']);
+                        $this->message->other = $message;
                         break;
                     case 'callback_query':
                     case 'inline_query':
@@ -240,6 +249,37 @@ class Bot
     public function sendDocument(array $data)
     {
         return $this->sendApiQuery('sendDocument', $data, true);
+    }
+
+    /**
+     * Отправка индикации набора текста в Telegram
+     * ```php
+     * // Показываем, что бот печатает
+     * $bot->sendChatAction($chat_id, 'typing');
+     * // Имитируем обработку запроса
+     * sleep(2);
+     * // Отправляем реальное сообщение
+     * $bot->sendMessage("Привет! Я обработал ваш запрос.");
+     * ```
+     * @param int $chat_id
+     * @param string $action
+     * `typing` — бот печатает текст;
+     * `upload_photo` — загрузка фото;
+     * `record_video` — запись видео;
+     * `upload_video` — загрузка видео;
+     * `record_audio` — запись аудио;
+     * `upload_audio` — загрузка аудио;
+     * `upload_document` — загрузка документа;
+     * `find_location` — поиск местоположения;
+     * `record_voice` — запись голосового сообщения;
+     * @return mixed|array
+     */
+    public function sendChatAction(int $chat_id, string $action)
+    {
+        return $this->sendApiQuery('sendChatAction', [
+            'chat_id' => $chat_id,
+            'action' => $action
+        ], true);
     }
 
     /**

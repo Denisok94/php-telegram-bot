@@ -157,6 +157,8 @@ if (file_exists($file_path)) {
 
 
 ```php
+// Показываем, что бот отправляет фото
+$resp = $bot->sendChatAction($chat_id, 'upload_photo');
 // Массив путей к файлам
 $photo_paths = [
    __DIR__. '/files/screenshots0.jpg',
