@@ -2,8 +2,10 @@
 
 namespace denisok94\telegram;
 
+use Throwable;
 use denisok94\telegram\model\Message;
 use denisok94\telegram\model\Event;
+use denisok94\telegram\model\Response;
 
 /**
  * https://botphp.ru/guides/perviy-bot/first-bot
@@ -192,10 +194,20 @@ class Bot
 
     /**
      * Отправить сообщение
-     * @param array $data
+     * @param string|array $data
+     * @return Response
      */
-    public function sendMessage($data = [])
+    public function sendMessage($data): Response
     {
+        if (is_array($data)) {
+            if (!isset('chat_id')) $data['chat_id'] = $this->getChatId();
+        } else {
+            $data = [
+                'chat_id' => $this->getChatId(),
+                'text' => (string) $data,
+                'parse_mode' => 'html',
+            ];
+        }
         return $this->sendApiQuery('sendMessage', $data);
     }
 
@@ -217,8 +229,9 @@ class Bot
      * ]);
      * ```
      * @param array $data
+     * @return Response
      */
-    public function sendPhoto(array $data)
+    public function sendPhoto(array $data): Response
     {
         return $this->sendApiQuery('sendphoto', $data, true);
     }
@@ -245,8 +258,9 @@ class Bot
      * ]);
      * ```
      * @param array $data
+     * @return Response
      */
-    public function sendDocument(array $data)
+    public function sendDocument(array $data): Response
     {
         return $this->sendApiQuery('sendDocument', $data, true);
     }
@@ -255,13 +269,27 @@ class Bot
      * Отправка индикации набора текста в Telegram
      * ```php
      * // Показываем, что бот печатает
-     * $bot->sendChatAction($chat_id, 'typing');
+     * $bot->sendChatAction('typing');
      * // Имитируем обработку запроса
      * sleep(2);
      * // Отправляем реальное сообщение
      * $bot->sendMessage("Привет! Я обработал ваш запрос.");
      * ```
-     * @param int $chat_id
+     * Практическое применение:
+     * - Улучшение пользовательского опыта — создает впечатление живого общения
+     * - Индикация обработки — показывает, что бот работает над запросом
+     * - Создание эффекта ожидания — помогает избежать ощущения “зависания”
+     * Важные особенности:
+     * - Индикатор отображается не более 5 секунд
+     * - Можно отправлять несколько раз подряд
+     * - Действие автоматически сбрасывается при отправке сообщения
+     * - Рекомендуется использовать перед длительными операциями
+     * Рекомендации по использованию:
+     * - Не злоупотребляйте индикатором
+     * - Используйте только когда действительно происходит обработка
+     * - Комбинируйте с реальным временем обработки (sleep())
+     * - Учитывайте, что индикатор может не отображаться у всех пользователей
+     * 
      * @param string $action
      * `typing` — бот печатает текст;
      * `upload_photo` — загрузка фото;
@@ -272,12 +300,12 @@ class Bot
      * `upload_document` — загрузка документа;
      * `find_location` — поиск местоположения;
      * `record_voice` — запись голосового сообщения;
-     * @return mixed|array
+     * @return Response
      */
-    public function sendChatAction(int $chat_id, string $action)
+    public function sendChatAction(string $action): Response
     {
         return $this->sendApiQuery('sendChatAction', [
-            'chat_id' => $chat_id,
+            'chat_id' => $this->getChatId(),
             'action' => $action
         ], true);
     }
@@ -288,9 +316,10 @@ class Bot
      * @param string $method
      * @param mixed $data
      * @param bool $raw
-     * @return mixed|array
+     * @return Response
+     * @throws Throwable
      */
-    public function sendApiQuery(string $method, $data = [], bool $raw = false)
+    public function sendApiQuery(string $method, $data = [], bool $raw = false): Response
     {
         $ch = curl_init('https://api.telegram.org/bot' . $this->token . '/' . $method);
         curl_setopt_array($ch, [
@@ -301,8 +330,12 @@ class Bot
             CURLOPT_HEADER => false,
             CURLOPT_TIMEOUT => 10
         ]);
-        $res = json_decode(curl_exec($ch), true);
+        $response = curl_exec($ch);
         curl_close($ch);
-        return $res;
+        try {
+            return new Response(json_decode($response, true));
+        } catch (Throwable $th) {
+            throw $th;
+        }
     }
 }
