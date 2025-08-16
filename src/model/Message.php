@@ -23,6 +23,10 @@ class Message
     public Chat $chat;
     public ?string $text = null;
     public Message|null $reply_to_message = null;
+    /**
+     * @var string document|photo|video|audio
+     */
+    public ?string $document_type = null;
     public ?Document $document = null;
     /**
      * @var Photo[]|array|null
@@ -46,21 +50,26 @@ class Message
         }
         if (isset($data['document'])) {
             $this->document = new Document($data['document']);
+            $this->document_type = 'document';
         }
         if (isset($data['photo'])) {
             $this->photo = [];
+            $this->document_type = 'photo';
             foreach ($data['photo'] as $key => $value) {
                 $this->photo[] = new Photo($value);
             }
         }
         if (isset($data['video'])) {
             $this->video = new Video($data['video']);
+            $this->document_type = 'video';
         }
         if (isset($data['audio'])) {
             $this->audio = new Audio($data['audio']);
+            $this->document_type = 'audio';
         }
         if (isset($data['sticker'])) {
             $this->sticker = $data['sticker'];
+            $this->document_type = 'sticker';
         }
     }
 }

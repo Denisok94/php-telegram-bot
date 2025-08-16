@@ -5,18 +5,14 @@ namespace denisok94\telegram\model;
 /**
  * Summary of Video
  */
-class Video
+class Video extends File
 {
-    public string $file_id;
-    public string $file_unique_id;
-    public string $file_name;
-    public string $mime_type;
-    public int $file_size;
     public int $width;
     public int $height;
     public int $duration;
     public Photo $thumbnail;
     public Photo $thumb;
+
     public function __construct(array $data)
     {
         $this->file_id = $data['file_id'];
