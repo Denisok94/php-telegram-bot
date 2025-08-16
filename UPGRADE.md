@@ -1,6 +1,16 @@
 Инструкции по обновлению для php Telegram Bot
 =========================================
 
+Upgrade from Helper 0.0.2
+-----------------------
+add 
+- model: `File`, `FileInfo` & `Response`
+- действия бота `sendChatAction(string $action):Response`
+- получение информации и ссылки на файл `getFileInfo`
+- скачивание файла `downloadFileById` & `downloadFileByUrl`
+upd  
+- all send() return `Response`
+- `sendMessage(array $data):mixed` → `sendMessage(string|array $data): Response`
 
 Upgrade from Helper 0.0.1
 -----------------------
