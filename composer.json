@@ -4,6 +4,7 @@
     "keywords": ["php telegram bot", "telegram bot", "bot"],
     "type": "library",
     "license": "MIT",
+    "version": "0.0.2",
     "support": {
         "source": "https://github.com/Denisok94/"
     },
