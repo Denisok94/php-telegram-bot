@@ -2,7 +2,7 @@
 
 namespace denisok94\telegram;
 
-use Throwable;
+use Exception, Throwable;
 use denisok94\telegram\model\Message;
 use denisok94\telegram\model\Event;
 use denisok94\telegram\model\Response;
@@ -201,7 +201,7 @@ class Bot
     public function sendMessage($data): Response
     {
         if (is_array($data)) {
-            if (!isset('chat_id')) $data['chat_id'] = $this->getChatId();
+            if (!isset($data['chat_id'])) $data['chat_id'] = $this->getChatId();
         } else {
             $data = [
                 'chat_id' => $this->getChatId(),
@@ -317,7 +317,7 @@ class Bot
      */
     public function getFileInfo(string $file_id): FileInfo|Response
     {
-        $result = $this->bot->sendApiQuery('getFile', ['file_id' => $file_id]);
+        $result = $this->sendApiQuery('getFile', ['file_id' => $file_id]);
         if ($result->ok && $result->result) {
             $file = new FileInfo($result->result);
             $file->file_url = 'https://api.telegram.org/file/bot' . $this->token . '/' . $file->file_path;
@@ -333,6 +333,7 @@ class Bot
      */
     public function downloadFileById(string $file_id, string $savePath): void
     {
+        /** @var FileInfo|Response $file */
         $file = $this->getFileInfo($file_id);
         if ($file instanceof FileInfo) {
             $ch = curl_init($file->file_url);
@@ -348,7 +349,7 @@ class Bot
                 throw new Exception('Ошибка при скачивании файла');
             }
         } else {
-            throw new Exception('Не удалось получить информацию об файле' . $result->description);
+            throw new Exception('Не удалось получить информацию об файле' . $file->description);
         }
     }
 
