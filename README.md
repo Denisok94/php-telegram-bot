@@ -73,17 +73,17 @@ if ($chat_id = $bot->getChatId()) {
                 ]);
                 break;
             case '/help':
-                $resp = $bot->sendMessage(['chat_id' => $chat_id, 'text' => 'Чем я могу Вам помочь?']);
+                $resp = $bot->sendMessage('Чем я могу Вам помочь?');
                 break;
         }
     } else if ($type == 'message') { // Простой текст
         $message = $bot->getText();
         switch ($message) {
             case 'Button 1':
-                $resp = $bot->sendMessage(['chat_id' => $chat_id, 'text' => 'Button 1 =)']);
+                $resp = $bot->sendMessage('Button 1 =)');
                 break;
             case 'Свяжи с оператором!!':
-                $resp = $bot->sendMessage(['chat_id' => $chat_id, 'text' => 'Все операторы заняты! =)']);
+                $resp = $bot->sendMessage('Все операторы заняты! =)');
                 break;
         }
     } else {
@@ -105,7 +105,7 @@ if ($chat_id = $bot->getChatId()) {
             ]),
         ]);
     }
-    if (isset($resp['ok']) && $resp['ok'] != true) {
+    if ($resp->ok != true) {
         $bot->sendMessage([
             'chat_id' => $bot->admin_id,
             'text' => "<pre>\n" . print_r($resp,true) . "\n</pre>",
@@ -120,6 +120,7 @@ if ($chat_id = $bot->getChatId()) {
 ## Отправить/загрузить файлы в чат
 
 ```php
+$chat_id = $bot->getChatId();
 $file_path = __DIR__ . '/files/denis_Charlotte.png';
 if (file_exists($file_path)) {
     $resp = $bot->sendDocument([
@@ -138,6 +139,7 @@ if (file_exists($file_path)) {
 ## Повторно отправить файл используя ид телеграма
 
 ```php
+$chat_id = $bot->getChatId();
 $file_id = "FILE_ID_ОТ_ТЕЛЕГРАМ";
 if (file_exists($file_path)) {
     $resp = $bot->sendDocument([
@@ -155,10 +157,10 @@ if (file_exists($file_path)) {
 
 ## Отправить несколько фото (до 10)
 
-
 ```php
+$chat_id = $bot->getChatId();
 // Показываем, что бот отправляет фото
-$resp = $bot->sendChatAction($chat_id, 'upload_photo');
+$resp = $bot->sendChatAction('upload_photo');
 // Массив путей к файлам
 $photo_paths = [
    __DIR__. '/files/screenshots0.jpg',
