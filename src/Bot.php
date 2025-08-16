@@ -6,6 +6,7 @@ use Throwable;
 use denisok94\telegram\model\Message;
 use denisok94\telegram\model\Event;
 use denisok94\telegram\model\Response;
+use denisok94\telegram\model\FileInfo;
 
 /**
  * https://botphp.ru/guides/perviy-bot/first-bot
@@ -309,6 +310,66 @@ class Bot
             'action' => $action
         ], true);
     }
+
+    /**
+     * @param string $file_id
+     * @return FileInfo|Response
+     */
+    public function getFileInfo(string $file_id): FileInfo|Response
+    {
+        $result = $this->bot->sendApiQuery('getFile', ['file_id' => $file_id]);
+        if ($result->ok && $result->result) {
+            $file = new FileInfo($result->result);
+            $file->file_url = 'https://api.telegram.org/file/bot' . $this->token . '/' . $file->file_path;
+            return $file;
+        }
+        return $result;
+    }
+
+    /**
+     * @param string $file_id
+     * @param string $savePath путь куда сохранить файл
+     * @throws Exception|Throwable
+     */
+    public function downloadFileById(string $file_id, string $savePath): void
+    {
+        $file = $this->getFileInfo($file_id);
+        if ($file instanceof FileInfo) {
+            $ch = curl_init($file->file_url);
+            $fp = fopen($savePath, 'wb');
+
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+
+            curl_exec($ch);
+            curl_close($ch);
+            fclose($fp);
+            if (!file_exists($savePath)) {
+                throw new Exception('Ошибка при скачивании файла');
+            }
+        } else {
+            throw new Exception('Не удалось получить информацию об файле' . $result->description);
+        }
+    }
+
+    /**
+     * @param string $url 
+     * @param string $savePath путь куда сохранить файл
+     */
+    public function downloadFileByUrl(string $url, string $savePath): void
+    {
+        $ch = curl_init($url);
+        $fp = fopen($savePath, 'wb');
+
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+
+        curl_exec($ch);
+        curl_close($ch);
+        fclose($fp);
+    }
+
+    //----------------------------
 
     /**
      * отправляем запрос к API Telegram, функция получает метод отправки

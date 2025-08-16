@@ -181,3 +181,31 @@ $arrayQuery = [
 
 $resp = $bot->sendApiQuery('sendMediaGroup', $arrayQuery, true);
 ```
+
+## Скачать полученный файл
+
+```php
+$message = $bot->message;
+$file_id = $message->document->file_id;
+$file_name = $message->document->file_name;
+$savePath = __DIR__ . '/' . $file_name;
+try {
+    $bot->downloadFileById($file_id, $savePath);
+} catch (Throwable $th) {
+    // Ошибка при скачивании файла
+}
+// or
+$file = $bot->getFileInfo($file_id);
+if ($file instanceof \denisok94\telegram\model\FileInfo) {
+    $extension = pathinfo($file->file_path, PATHINFO_EXTENSION);
+    // если ок
+    $bot->downloadFileByUrl($file->file_url, $savePath);
+    if (file_exists($savePath)) {
+        // code
+    } else {
+        // Ошибка при скачивании файла
+    }
+} else {
+    // Не удалось получить информацию об файле, см $file->description
+}
+```
