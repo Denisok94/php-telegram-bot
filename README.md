@@ -1,7 +1,4 @@
-# php-telegram-bot
-php telegram bot
-
-___
+# php telegram bot
 
 # Установка
 
@@ -24,6 +21,30 @@ composer update
 # or
 php composer.phar update
 ```
+
+# Методы
+
+| Method | Description |
+|----------------|:----------------|
+| setData(string $data) | Сообщение от пользователя которое прислал Телеграм |
+| getChatId(): ?int | ид чата в котором идёт беседа |
+| getType(): string | Тип присланного сообщения/события |
+| isAdmin() | Является автор сообщения адсином бота |
+| getText(): ?string | текст сообщения |
+| | |
+| sendMessage(string\|array $data) | Отправить сообщение |
+| sendPhoto(array $data) | Отправить картинку |
+| sendDocument(array $data) | Отправить файл (фото/видео/музыку/гифку и т.д.) |
+| sendChatAction(string $action) | Отправка индикации набора текста |
+| editMessage(string $message_id, string\|array $data) | Обновить сообщение (только собственные сообщения бота) |
+| deleteMessage(int $chat_id, int $message_id) | Удалить сообщение |
+| deleteMessages(int $chat_id, array $message_id) | Удалить сообщения |
+| sendInlineResults(InlineQuery $query, array $results) | Ответ на inline-запрос |
+| getFileInfo(string $file_id) | Получить информацию о файле и ссылку для скачивания |
+| downloadFileById(string $file_id, string $savePath) | Скачать файл по его ид |
+| downloadFileByUrl(string $url, string $savePath) | Скачать файл по url |
+| | |
+| sendApiQuery(string $method, $data = [], bool $raw = false) | отправляем свой кастомный запрос к API Telegram |
 
 # Использование
 
@@ -186,26 +207,36 @@ $resp = $bot->sendApiQuery('sendMediaGroup', $arrayQuery, true);
 
 ```php
 $message = $bot->message;
-$file_id = $message->document->file_id;
-$file_name = $message->document->file_name;
-$savePath = __DIR__ . '/' . $file_name;
-try {
-    $bot->downloadFileById($file_id, $savePath);
-} catch (Throwable $th) {
-    // Ошибка при скачивании файла
-}
-// or
-$file = $bot->getFileInfo($file_id);
-if ($file instanceof \denisok94\telegram\model\FileInfo) {
-    $extension = pathinfo($file->file_path, PATHINFO_EXTENSION);
-    // если ок
-    $bot->downloadFileByUrl($file->file_url, $savePath);
-    if (file_exists($savePath)) {
-        // code
-    } else {
+$type = $message->document_type;
+if ($type != 'photo') {
+    $file_id = $message->{$type}->file_id;
+    $file_name = $message->{$type}->file_name;
+    $savePath = __DIR__ . '/' . $file_name;
+    try {
+        // бот сам получить информацию о файле и скачает его в нужное место
+        $bot->downloadFileById($file_id, $savePath);
+    } catch (Throwable $th) {
         // Ошибка при скачивании файла
     }
-} else {
-    // Не удалось получить информацию об файле, см $file->description
+} else if ($message->photo) { // вариант 2
+    $photo = $message->photo[array_key_last($message->photo)];
+    $file_id = $photo->file_id;
+    // сами получаем информацию об файле
+    $file = $bot->getFileInfo($file_id);
+    if ($file instanceof \denisok94\telegram\model\FileInfo) {
+        // проверяем что всё ли ок
+        $extension = pathinfo($file->file_path, PATHINFO_EXTENSION);
+        $file_name = pathinfo($file->file_path, PATHINFO_BASENAME);
+        $savePath = __DIR__ ."/$file_name.$extension";
+        // и скачиваем по ссывлке куда нам надо и потом прверяем
+        $bot->downloadFileByUrl($file->file_url, $savePath);
+        if (file_exists($savePath)) {
+            // code
+        } else {
+            // Ошибка при скачивании файла
+        }
+    } else {
+        // Не удалось получить информацию об файле, см $file->description
+    }
 }
 ```
