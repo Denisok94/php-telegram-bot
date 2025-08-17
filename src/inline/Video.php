@@ -5,9 +5,9 @@ namespace denisok94\telegram\inline;
 /**
  * Summary of Video (видео)
  */
-class Video implements InlineResultInterface
+class Video extends BaseResult
 {
-    public string $id = uniqid();
+    public string $id;
     public string $type = 'video';
     /**
      * https://example.com/video.mp4

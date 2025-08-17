@@ -5,9 +5,9 @@ namespace denisok94\telegram\inline;
 /**
  * Summary of Article (статья)
  */
-class Article implements InlineResultInterface
+class Article extends BaseResult
 {
-    public string $id = uniqid();
+    public string $id;
     public string $type = 'article';
     public string $title = '';
     public string $description = '';

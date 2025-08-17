@@ -5,9 +5,9 @@ namespace denisok94\telegram\inline;
 /**
  * Summary of Contact (контакт)
  */
-class Contact implements InlineResultInterface
+class Contact extends BaseResult
 {
-    public string $id = uniqid();
+    public string $id;
     public string $type = 'contact';
     public string $phone_number;
     public string $first_name;

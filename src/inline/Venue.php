@@ -5,9 +5,9 @@ namespace denisok94\telegram\inline;
 /**
  * Summary of Venue (место)
  */
-class Venue implements InlineResultInterface
+class Venue extends BaseResult
 {
-    public string $id = uniqid();
+    public string $id;
     public string $type = 'venue';
     public float $latitude;
     public float $longitude;
