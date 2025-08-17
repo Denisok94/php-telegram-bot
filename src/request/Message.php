@@ -1,11 +1,13 @@
 <?php
 
-namespace denisok94\telegram\model;
-
+namespace denisok94\telegram\request;
 
 use denisok94\telegram\model\From;
 use denisok94\telegram\model\Chat;
-use denisok94\telegram\model\Document;
+use denisok94\telegram\message\Document;
+use denisok94\telegram\message\Photo;
+use denisok94\telegram\message\Video;
+use denisok94\telegram\message\Audio;
 
 /**
  * Summary of Message

@@ -1,6 +1,6 @@
 <?php
 
-namespace denisok94\telegram\model;
+namespace denisok94\telegram;
 
 /**
  * Ответ от телеграмма
@@ -8,7 +8,10 @@ namespace denisok94\telegram\model;
 class Response
 {
     public bool $ok;
-    public ?mixed $result;
+    /**
+     * @var mixed|null
+     */
+    public $result;
     public ?int $error_code;
     public ?string $description;
 

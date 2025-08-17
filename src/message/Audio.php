@@ -1,6 +1,6 @@
 <?php
 
-namespace denisok94\telegram\model;
+namespace denisok94\telegram\message;
 
 /**
  * Summary of Audio

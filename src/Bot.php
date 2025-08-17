@@ -3,9 +3,11 @@
 namespace denisok94\telegram;
 
 use Exception, Throwable;
-use denisok94\telegram\model\Message;
-use denisok94\telegram\model\Event;
-use denisok94\telegram\model\Response;
+use denisok94\telegram\Response;
+use denisok94\telegram\request\Message;
+use denisok94\telegram\request\CallbackQuery;
+use denisok94\telegram\request\InlineQuery;
+use denisok94\telegram\inline\InlineResultInterface;
 use denisok94\telegram\model\FileInfo;
 
 /**
@@ -46,13 +48,12 @@ class Bot
      * @var Message|null
      */
     public Message|null $message = null;
-
     /**
-     * @var Event|null
+     * @var CallbackQuery|InlineQuery|null
      */
-    public Event|null $event = null;
+    public null $event = null;
     /**
-     * @var string|bool callback_query|inline_query|my_chat_member|message|document|bot_command|object_message
+     * @var string|bool callback_query|inline_query|my_chat_member|message|document|sticker|bot_command|object_message
      */
     public string|bool $type;
 
@@ -100,9 +101,9 @@ class Bot
                 switch ($this->type) {
                     case 'message':
                     case 'document':
+                    case 'sticker':
                     case 'bot_command':
-                        $message = $this->data['message'];
-                        $this->message = new Message($message);
+                        $this->message = new Message($this->data['message']);
                         $this->message->type = $this->type;
                         break;
                     case 'object_message':
@@ -116,16 +117,15 @@ class Bot
                         $this->message->other = $message;
                         break;
                     case 'callback_query':
-                    case 'inline_query':
-                        $event = $this->data[$this->type];
-                        $this->event = new Event($event);
-                        $this->event->type = $this->type;
+                        $this->event = new CallbackQuery($this->data['callback_query']);
                         $this->message = $this->event->message;
                         break;
+                    case 'inline_query':
+                        $this->event = new InlineQuery($this->data['inline_query']);
+                        break;
                     case 'my_chat_member':
-                        break;
                     default:
-                        break;
+                        throw new Exception('Поддержка сообщений/событий типа: "' . $this->type . '" ещё пока не реализована =(');
                 }
             }
         }
@@ -170,6 +170,8 @@ class Bot
             $message = $this->data['message'];
             if (isset($message['document']) || isset($message['photo']) || isset($message['video']) || isset($message['audio'])) {
                 return "document";
+            } elseif (isset($message['sticker'])) {
+                return "sticker";
             } elseif (isset($message['entities'])) {
                 $entities = $message['entities'][0];
                 if (isset($entities['type']) && $entities['type'] == 'bot_command') {
@@ -198,10 +200,10 @@ class Bot
      * @param string|array $data
      * @return Response
      */
-    public function sendMessage($data): Response
+    public function sendMessage(string|array $data): Response
     {
         if (is_array($data)) {
-            if (!isset($data['chat_id'])) $data['chat_id'] = $this->getChatId();
+            $data['chat_id'] = $data['chat_id'] ?? $this->getChatId();
         } else {
             $data = [
                 'chat_id' => $this->getChatId(),
@@ -311,7 +313,89 @@ class Bot
         ], true);
     }
 
+    //--------------
+
     /**
+     * Обновить сообщение (только собственные сообщения бота)
+     * @param string $message_id
+     * @param string|array $data
+     * @return Response
+     */
+    public function editMessage(string $message_id, string|array $data): Response
+    {
+        if (is_array($data)) {
+            $data['chat_id'] = $data['chat_id'] ?? $this->getChatId();
+            $data['message_id'] = $message_id;
+        } else {
+            $data = [
+                'chat_id' => $this->getChatId(),
+                'message_id' => $message_id,
+                'text' => (string) $data,
+                'parse_mode' => 'html',
+            ];
+        }
+        return $this->sendApiQuery('editMessageText', $data, true);
+    }
+
+    /**
+     * Удалить сообщение
+     * https://botphp.ru/docs/api#deletemessage
+     * @param int $chat_id
+     * @param int $message_id
+     * @return Response
+     */
+    public function deleteMessage(int $chat_id, int $message_id): Response
+    {
+        return $this->sendApiQuery('deleteMessage', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+        ], true);
+    }
+
+    /**
+     * Удалить сообщения
+     * https://botphp.ru/docs/api#deletemessages
+     * @param int $chat_id
+     * @param array<int> $message_id
+     * @return Response
+     */
+    public function deleteMessages(int $chat_id, array $message_id): Response
+    {
+        return $this->sendApiQuery('deleteMessages', [
+            'chat_id' => $chat_id,
+            'message_ids' => $message_id,
+        ], true);
+    }
+
+    //--------------
+
+    /**
+     * Ответ на inline-запрос
+     * @param InlineQuery $query
+     * @param InlineResultInterface[]|array $results max 50
+     */
+    public function sendInlineResults(InlineQuery $query, array $results)
+    {
+        $ch = curl_init($this->getBaseBotUrl() . '/answerInlineQuery');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, [
+            'inline_query_id' => $query->id,
+            'results' => json_encode([$results])
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+
+    //--------------
+
+    /**
+     * Получить информацию о файле и ссылку для скачивания
+     * Важные моменты:
+     * - Временный URL действителен 60 минут
+     * - После истечения срока нужно заново запросить URL через getFile
+     * - Файл можно скачать только один раз по полученному URL
+     * 
      * @param string $file_id
      * @return FileInfo|Response
      */
@@ -383,7 +467,7 @@ class Bot
      */
     public function sendApiQuery(string $method, $data = [], bool $raw = false): Response
     {
-        $ch = curl_init('https://api.telegram.org/bot' . $this->token . '/' . $method);
+        $ch = curl_init($this->getBaseBotUrl() . '/' . $method);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $raw ? $data : http_build_query($data),
@@ -399,5 +483,10 @@ class Bot
         } catch (Throwable $th) {
             throw $th;
         }
+    }
+
+    public function getBaseBotUrl()
+    {
+        return 'https://api.telegram.org/bot' . $this->token;
     }
 }
