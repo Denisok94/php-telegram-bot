@@ -341,4 +341,103 @@ if ($type == 'bot_command') {
 
 ## inline_query
 
-todo
+в разработке...
+https://botphp.ru/docs/api#inlinequeryresult
+```php
+$bot = new Bot('123456:qwerty');
+$type = $bot->getType();
+if ($type == 'inline_query') {
+    $results = [];
+    $search = $this->bot->getText();
+    if (mb_strlen($search) < 10) {
+        // испольование готовых шаблонов
+        $article = new \denisok94\telegram\inline\Article();
+        $article->id = uniqid();
+        $article->title = "Маловато будет!";
+        $article->description = "Для поиска необходимо минимум 10 символов";
+        $article->thumb_url = 'https://example.com/photo.jpg';
+        $article->input_message_content = [
+            'message_text' => "-article: " . $article->id
+        ];
+        $results[] = $article;
+    } else {
+        // свой вариант, если шаблонов мало
+        for ($i = 0; $i < 10; $i++) {
+            $results[] = [
+                'type' => 'article',
+                'id' => uniqid(),
+                'title' => "Результат $i",
+                'description' => 'Описание',
+                'thumb_url' => 'https://example.com/photo.jpg',
+                'input_message_content' => [
+                    'message_text' => 'Текст сообщения ' . $i // что будет отправлено при выборе пользователем
+                ]
+            ];
+        }
+    }
+    $resp = $this->bot->sendInlineResults($results); // максимум 50 результатов за раз
+} else if ($type == 'message') {
+    $message = $bot->getText();
+    // получит выбранный объект
+    if (isset($bot->data['message']['via_bot'])) {
+        $bot_id = $bot->data['message']['via_bot']['id'];
+        // проверяем, что это выбор от нашего бота (малолди в чате есть другие)
+        switch ($message) {
+            case 'Текст сообщения 1':
+            case 'Текст сообщения 2':
+            default:
+                $resp = $this->bot->sendMessage('Выбранный объект: "' . $message . '"');
+                break;
+        }
+    }
+}
+```
+
+## MiniApp
+
+```html
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+        const tg = Telegram.WebApp;
+        // Получаем данные initData
+        const initData = tg.initData;
+        tg.ready(); // сообщаем Telegram, что готовы
+        // отправляем данные на валидацию
+        fetch("api/get-user", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ initData })
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Ответ:", data);
+            })
+            .catch(error => {
+                console.error("Ошибка запроса:", error);
+            });
+    });
+</script>
+```
+
+```php
+// ~ApiController
+public function actionGetUser()
+{
+    try {
+        // Получаем данные из параметра tgWebAppData
+        $initData = json_decode(file_get_contents('php://input') ?? '', true)['initData'] ?? '';
+        // Проверяем и декодируем данные
+        $result = \denisok94\telegram\InitData::isValid($initData, $botToken, true);
+        if ($result['isValid'] == true) {
+            return $this->sendSuccess($result['data']['parsed']); // 200
+        } else {
+            $result['data'] = $result['data']['parsed'] ?? $initData;
+            return $this->sendError("Bad Request", $result); // 400
+        }
+    } catch (\Exception $e) {
+        return $this->sendError($e->getMessage()); // 500
+    }
+}
+```
