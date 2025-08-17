@@ -56,13 +56,31 @@ php composer.phar update
 | $message | Message\|null | Класс сообщеия |
 | $event | CallbackQuery\|InlineQuery\|null | Класс события |
 
+### Планы
+
+- &#x2611; Обрабортка `inline_query` сообщений
+- &#x2610; Отдельные методы отправки для каждого типа файла (видео, аудио, стикеров и тд)
+- &#x2610; Массовая отправка фото (галереи)
+- &#x2610; Массовая отправка других типов файлов (_если возможно_)
+- &#x2610; Доработка шаблонов ответа для `inline_query`
+- &#x2610; Реакции на сообщения
+- &#x2610; Реакции на события в группах/каналах
+- &#x2610; Поддержка типов событий `edited_channel_post`, `my_chat_member` и других
+- &#x2610; Всё переделать
+
+|checked|unchecked|crossed|
+|---|---|---|
+|&check;|_|&cross;|
+|&#x2611;|&#x2610;|&#x2612;|
+
 ## Использование
 
 ### Регистрация webhook
 
+указывает Телеграму url, куда ему отправлять нам сообщения отправленные боту
 ```php
 $bot = new Bot('123456:qwerty');
-$url = "https://ваш-домен.ru/webhook";
+$url = "https://ваш-домен.ru/webhook.php";
 $bot->setWebhook($url);
 // or
 $bot->setWebhook([
@@ -85,6 +103,7 @@ $bot = new Bot([
     'bot_name' => $bot_name,
     'admin_id' => $admin_id,
 ]);
+// получаем сообщение от Телеграмма
 $bot->setData(file_get_contents('php://input'));
 
 if ($chat_id = $bot->getChatId()) {
