@@ -1,6 +1,6 @@
 # php telegram bot
 
-# Установка
+## Установка
 
 Run:
 
@@ -22,15 +22,15 @@ composer update
 php composer.phar update
 ```
 
-# Методы
+## Описание
 
 | Method | Description |
 |----------------|:----------------|
 | setData(string $data) | Сообщение от пользователя которое прислал Телеграм |
-| getChatId(): ?int | ид чата в котором идёт беседа |
+| getChatId(): ?int | Ид чата в котором идёт беседа |
 | getType(): string | Тип присланного сообщения/события |
 | isAdmin() | Является автор сообщения адсином бота |
-| getText(): ?string | текст сообщения |
+| getText(): ?string | Текст сообщения |
 | | |
 | sendMessage(string\|array $data) | Отправить сообщение |
 | sendPhoto(array $data) | Отправить картинку |
@@ -44,9 +44,37 @@ php composer.phar update
 | downloadFileById(string $file_id, string $savePath) | Скачать файл по его ид |
 | downloadFileByUrl(string $url, string $savePath) | Скачать файл по url |
 | | |
-| sendApiQuery(string $method, $data = [], bool $raw = false) | отправляем свой кастомный запрос к API Telegram |
+| sendApiQuery(string $method, $data = [], bool $raw = false) | Отправляем свой кастомный запрос к API Telegram, [подробнее обо всех методах на руском](https://botphp.ru/docs/api) |
 
-# Использование
+| Property | Tupe | Description |
+|----------------|:----------------|----------------|
+| $bot_name | string | |
+| $admin_id | int\|null | |
+| $data | array | Оригинальное сообщение от Telegram |
+| $update_id | int\|null | |
+| $type | string\|bool | Тип сообщения |
+| $message | Message\|null | Класс сообщеия |
+| $event | CallbackQuery\|InlineQuery\|null | Класс события |
+
+## Использование
+
+### Регистрация webhook
+
+```php
+$bot = new Bot('123456:qwerty');
+$url = "https://ваш-домен.ru/webhook";
+$bot->setWebhook($url);
+// or
+$bot->setWebhook([
+    'url' => $url,
+    'max_connections' => 5,
+    'allowed_updates' => json_encode(["message", "callback_query"]),
+]);
+// удалить текущий webhook
+$bot->deleteWebhook();
+```
+
+### Примеры
 
 ```php
 // webhook.php
@@ -101,7 +129,8 @@ if ($chat_id = $bot->getChatId()) {
         $message = $bot->getText();
         switch ($message) {
             case 'Button 1':
-                $resp = $bot->sendMessage('Button 1 =)');
+            case 'Button 2':
+                $resp = $bot->sendMessage('Button =)');
                 break;
             case 'Свяжи с оператором!!':
                 $resp = $bot->sendMessage('Все операторы заняты! =)');
@@ -136,9 +165,9 @@ if ($chat_id = $bot->getChatId()) {
 }
 ```
 
-# файлы
+## Работа с файлами
 
-## Отправить/загрузить файлы в чат
+### Отправить/загрузить файлы в чат
 
 ```php
 $chat_id = $bot->getChatId();
@@ -157,7 +186,7 @@ if (file_exists($file_path)) {
 }
 ```
 
-## Повторно отправить файл используя ид телеграма
+### Повторно отправить файл используя ид телеграма
 
 ```php
 $chat_id = $bot->getChatId();
@@ -176,7 +205,7 @@ if (file_exists($file_path)) {
 }
 ```
 
-## Отправить несколько фото (до 10)
+### Отправить несколько фото (до 10)
 
 ```php
 $chat_id = $bot->getChatId();
@@ -203,7 +232,7 @@ $arrayQuery = [
 $resp = $bot->sendApiQuery('sendMediaGroup', $arrayQuery, true);
 ```
 
-## Скачать полученный файл
+### Скачать полученный файл
 
 ```php
 $message = $bot->message;
@@ -240,3 +269,76 @@ if ($type != 'photo') {
     }
 }
 ```
+
+## inline_keyboard и callback_query
+
+```php
+$type = $bot->getType();
+$chat_id = $bot->getChatId();
+if ($type == 'bot_command') {
+    $message = $bot->getText();
+    switch ($message) {
+        case '/start':
+            $resp = $bot->sendMessage([
+                    'chat_id' => $chat_id,
+                    'text' => 'test inline_keyboard',
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => [
+                            [
+                                [
+                                    'text' => 'Button 1',
+                                    'callback_data' => 'inline_test_1',
+                                ]
+                            ],
+                            [
+                                [
+                                    'text' => 'Button 2',
+                                    'callback_data' => 'inline_test_2',
+                                ],
+                                [
+                                    'text' => 'Button 3',
+                                    'callback_data' => 'inline_test_3',
+                                ]
+                            ]
+                        ],
+                        'resize_keyboard' => true,
+                    ]),
+                ]);
+            break;
+    }
+} else if ($type == 'callback_query') {
+    $message = $bot->getText();
+    switch ($message) {
+        case 'inline_test_1':
+        case 'inline_test_2':
+        case 'inline_test_3':
+            $resp = $bot->editMessage($bot->message->id, [
+                "text" => "Реакция принята!\n а теперь этап 2й)",
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => [
+                        [
+                            [
+                                'text' => '1',
+                                'callback_data' => 'inline_test_4',
+                            ],
+                            [
+                                'text' => '2',
+                                'callback_data' => 'inline_test_5',
+                            ]
+                        ]
+                    ],
+                    'resize_keyboard' => true,
+                ]),
+            ]);
+            break;
+        case 'inline_test_4':
+        case 'inline_test_5':
+            $resp = $bot->editMessage($bot->message->id, "Спасибо за участие в опросе!");
+            break;
+    }
+}
+```
+
+## inline_query
+
+todo

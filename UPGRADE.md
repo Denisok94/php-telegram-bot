@@ -1,6 +1,11 @@
 Инструкции по обновлению для php Telegram Bot
 =========================================
 
+Upgrade from Helper 0.1.1
+-----------------------
+fixs inline query
+add `setWebhook()` & `deleteWebhook()`
+
 Upgrade from Helper 0.1.0
 -----------------------
 add:
