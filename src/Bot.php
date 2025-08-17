@@ -111,7 +111,7 @@ class Bot
                         $this->message = new Message($this->data['message']);
                         $this->message->type = $this->type;
                         if ($this->type == 'bot_command' && $this->bot_name != '') {
-                            $this->message->text = str_replace([$this->bot_name, "@" . $this->bot_name], "", $this->message->text);
+                            $this->message->text = str_replace(["@" . $this->bot_name, $this->bot_name], "", $this->message->text);
                         }
                         break;
                     case 'object_message':

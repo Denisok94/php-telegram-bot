@@ -8,7 +8,7 @@ namespace denisok94\telegram\inline;
 class Gif extends BaseResult
 {
     public string $id;
-    public string $type = 'article';
+    public string $type = 'gif';
     public string $gif_url;
     public string $thumb_url;
     public string $caption;
