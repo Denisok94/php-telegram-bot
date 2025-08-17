@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace denisok94\telegram;
+namespace denisok94\telegram\app;
+
+use denisok94\telegram\app\model\InitDataModel;
 
 /**
  * Class for validating the integrity of initData received from a Telegram mini-application.
@@ -22,7 +24,6 @@ class InitData
      * @param string $initData The initData string containing query parameters.
      * @param string $botToken The bot token used for HMAC calculation.
      * @param bool   $verbose  Whether to include additional information in the result.
-     *
      * @return bool|array If $verbose is true, returns an associative array with validation information,
      *                    otherwise returns a boolean indicating whether the validation passed.
      */
@@ -49,42 +50,34 @@ class InitData
                 'secretKey' => $secretKey,
             ],
         ];
-
         return $verbose ? $result : $result['isValid'];
     }
 
     /**
      * Parses the initData string into an associative array.
-     *
      * @param string $initData The initData string containing query parameters.
-     *
      * @return array The associative array parsed from the initData string.
      */
     private static function parseInitDataStringToArray(string $initData): array
     {
         parse_str($initData, $parsed);
-
         foreach ($parsed as $key => $value) {
             if (self::isValidJson($value)) {
                 $parsed[$key] = json_decode(urldecode($value), true);
             }
         }
-
         return $parsed;
     }
 
     /**
      * Generates the check string for validation by sorting and formatting the provided data array.
-     *
      * @param array $data The associative array containing the data for validation.
-     *
      * @return string The formatted check string.
      */
     private static function getCheckString(array $data): string
     {
         unset($data['hash']);
         ksort($data);
-
         $array = [];
         foreach ($data as $key => $value) {
             if (is_array($value)) {
@@ -93,21 +86,17 @@ class InitData
                 $array[] = $key . '=' . $value;
             }
         }
-
         return implode(PHP_EOL, $array);
     }
 
     /**
      * Checks if the given string is a valid JSON object.
-     *
      * @param string $jsonString The string to check.
-     *
      * @return bool Returns true if the string is a valid JSON object, otherwise false.
      */
     private static function isValidJson(string $jsonString): bool
     {
         json_decode($jsonString);
-
         return (json_last_error() === JSON_ERROR_NONE);
     }
 }

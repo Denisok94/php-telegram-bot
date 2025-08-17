@@ -448,7 +448,7 @@ public function actionGetUser()
         // Получаем данные из параметра tgWebAppData
         $initData = json_decode(file_get_contents('php://input') ?? '', true)['initData'] ?? '';
         // Проверяем и декодируем данные
-        $result = \denisok94\telegram\InitData::isValid($initData, $botToken, true);
+        $result = \denisok94\telegram\app\InitData::isValid($initData, $botToken, true);
         if ($result['isValid'] == true) {
             return $this->sendSuccess($result['data']['parsed']); // 200
         } else {
