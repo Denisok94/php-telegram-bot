@@ -69,7 +69,7 @@ class Bot
      * ```
      * @param string|array $parama
      */
-    public function __construct(array $parama)
+    public function __construct($parama)
     {
         if (is_array($parama)) {
             $this->token = $parama['bot_token'];
