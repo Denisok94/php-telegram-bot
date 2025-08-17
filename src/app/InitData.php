@@ -99,4 +99,59 @@ class InitData
         json_decode($jsonString);
         return (json_last_error() === JSON_ERROR_NONE);
     }
+
+    //---------------------
+    // todo: ↓
+
+    // Проверка необходимости обновления
+    public static function checkSessionValidity(InitDataModel $initData)
+    {
+        if (!self::isValidSession($initData)) {
+            // Информируем пользователя о необходимости перезапуска
+            return self::showRestartPrompt();
+        }
+
+        return [];
+    }
+
+    // Функция подсказки о перезапуске
+    public static function showRestartPrompt(): array
+    {
+        return [
+            'message' => 'Для продолжения работы, пожалуйста, перезапустите мини-приложение',
+            'buttons' => [
+                ['text' => 'Перезапустить', 'callback' => 'restartApp']
+            ]
+        ];
+    }
+
+    public static function isValidSession(InitDataModel $initData): bool
+    {
+        try {
+            $authDate = (int) $initData->auth_date;
+            $currentTime = time();
+
+            if ($currentTime - $authDate > 3600) { // 1 час
+                throw new Exception("Сессия устарела");
+            }
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * проверка на возможность отправки сообщений пользователю
+     */
+    public static function checkPMPermissions(InitDataModel $initData): bool
+    {
+        try {
+            if (!$initData->user->allows_write_to_pm) {
+                throw new Exception("Отсутствуют права на отправку личных сообщений пользователю");
+            }
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
 }
