@@ -11,8 +11,6 @@ use denisok94\telegram\inline\InlineResultInterface;
 use denisok94\telegram\model\FileInfo;
 
 /**
- * https://botphp.ru/guides/perviy-bot/first-bot
- * https://botphp.ru/guides/perviy-bot/own-class-bot
  * ```php
  * $bot = new Bot([
  *  'bot_token' => '...', 
@@ -51,7 +49,7 @@ class Bot
     /**
      * @var CallbackQuery|InlineQuery|null
      */
-    public null $event = null;
+    public $event = null;
     /**
      * @var string|bool callback_query|inline_query|my_chat_member|message|document|sticker|bot_command|object_message
      */
@@ -61,18 +59,25 @@ class Bot
 
     /**
      * ```php
+     * $bot_token = '123456:qwerty';
+     * $bot = new Bot($bot_token);
      * $bot = new Bot([
-     *  'bot_token' => '...', 
+     *  'bot_token' => $bot_token, 
      *  'bot_name' => 'MyBot'
+     *  'admin_id' => 123456
      * ]);
      * ```
-     * @param array $parama
+     * @param string|array $parama
      */
     public function __construct(array $parama)
     {
-        $this->token = $parama['bot_token'];
-        $this->bot_name = $parama['bot_name'] ?? '';
-        $this->admin_id = $parama['admin_id'] ?? null;
+        if (is_array($parama)) {
+            $this->token = $parama['bot_token'];
+            $this->bot_name = $parama['bot_name'] ?? '';
+            $this->admin_id = $parama['admin_id'] ?? null;
+        } else {
+            $this->token = $parama;
+        }
     }
 
     /**
@@ -105,6 +110,9 @@ class Bot
                     case 'bot_command':
                         $this->message = new Message($this->data['message']);
                         $this->message->type = $this->type;
+                        if ($this->type == 'bot_command' && $this->bot_name != '') {
+                            $this->message->text = str_replace([$this->bot_name, "@" . $this->bot_name], "", $this->message->text);
+                        }
                         break;
                     case 'object_message':
                         $message = $this->data['message'];
@@ -156,7 +164,7 @@ class Bot
 
     /**
      * Функция что бы получить тип сообщения
-     * @return bool|string
+     * @return bool|string callback_query|inline_query|my_chat_member|message|document|sticker|bot_command|object_message
      */
     public function getType(): bool|string
     {
@@ -233,6 +241,7 @@ class Bot
      * ```
      * @param array $data
      * @return Response
+     * @url https://botphp.ru/docs/api#sendphoto
      */
     public function sendPhoto(array $data): Response
     {
@@ -262,6 +271,7 @@ class Bot
      * ```
      * @param array $data
      * @return Response
+     * @url https://botphp.ru/docs/api#senddocument
      */
     public function sendDocument(array $data): Response
     {
@@ -304,6 +314,7 @@ class Bot
      * `find_location` — поиск местоположения;
      * `record_voice` — запись голосового сообщения;
      * @return Response
+     * @url https://botphp.ru/docs/api#sendchataction
      */
     public function sendChatAction(string $action): Response
     {
@@ -320,6 +331,7 @@ class Bot
      * @param string $message_id
      * @param string|array $data
      * @return Response
+     * @url https://botphp.ru/docs/api#editmessagetext
      */
     public function editMessage(string $message_id, string|array $data): Response
     {
@@ -339,10 +351,10 @@ class Bot
 
     /**
      * Удалить сообщение
-     * https://botphp.ru/docs/api#deletemessage
      * @param int $chat_id
      * @param int $message_id
      * @return Response
+     * @url https://botphp.ru/docs/api#deletemessage
      */
     public function deleteMessage(int $chat_id, int $message_id): Response
     {
@@ -354,10 +366,10 @@ class Bot
 
     /**
      * Удалить сообщения
-     * https://botphp.ru/docs/api#deletemessages
      * @param int $chat_id
      * @param array<int> $message_id
      * @return Response
+     * @url https://botphp.ru/docs/api#deletemessages
      */
     public function deleteMessages(int $chat_id, array $message_id): Response
     {
@@ -371,20 +383,26 @@ class Bot
 
     /**
      * Ответ на inline-запрос
-     * @param InlineQuery $query
-     * @param InlineResultInterface[]|array $results max 50
+     * @param \denisok94\telegram\inline\InlineResultInterface[]|array $results max 50
+     * @return Response
+     * @url https://botphp.ru/docs/api#answerinlinequery
      */
-    public function sendInlineResults(InlineQuery $query, array $results)
+    public function sendInlineResults(array $results)
     {
-        $ch = curl_init($this->getBaseBotUrl() . '/answerInlineQuery');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, [
-            'inline_query_id' => $query->id,
-            'results' => json_encode([$results])
+        return $this->sendApiQuery('answerInlineQuery', [
+            'inline_query_id' => $this->event->id,
+            'results' => json_encode(
+                array_map(function ($result) {
+                    if ($result instanceof InlineResultInterface) {
+                        return $result->getArray();
+                    } else if (is_array($result)) {
+                        return $result;
+                    } else {
+                        throw new Exception('Ожидаеться \denisok94\telegram\inline\InlineResultInterface[]|array $results');
+                    }
+                }, $results)
+            ),
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
-        curl_close($ch);
     }
 
     //--------------
@@ -464,6 +482,7 @@ class Bot
      * @param bool $raw
      * @return Response
      * @throws Throwable
+     * @url https://botphp.ru/docs/api
      */
     public function sendApiQuery(string $method, $data = [], bool $raw = false): Response
     {
@@ -481,11 +500,55 @@ class Bot
         try {
             return new Response(json_decode($response, true));
         } catch (Throwable $th) {
+            // curl_error($ch);
             throw $th;
         }
     }
 
-    public function getBaseBotUrl()
+    /**
+     * Регистрация webhook
+     * ```php
+     * $bot = new Bot('123456:qwerty');
+     * $url = "https://t.s-denis.ru/webhook/massage";
+     * $bot->setWebhook($url);
+     * // or
+     * $bot->setWebhook([
+     *  'url' => $url,
+     *  'max_connections' => 5,
+     *  'allowed_updates' => json_encode(["message", "callback_query"]),
+     * ]);
+     * ```
+     * @param string|array $params
+     * @return Response
+     * @throws Throwable
+     * @url https://botphp.ru/docs/api#setwebhook
+     */
+    public function setWebhook(string|array $params): Response
+    {
+        if (is_string($params)) {
+            $params = ['url' => $params];
+        }
+        return $this->sendApiQuery('setWebhook', $params);
+    }
+
+    /**
+     * @return Response
+     * @url https://botphp.ru/docs/api#deletewebhook
+     */
+    public function deleteWebhook(): Response
+    {
+        $ch = curl_init($this->getBaseBotUrl() . '/deleteWebhook');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        try {
+            return new Response(json_decode($response, true));
+        } catch (Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function getBaseBotUrl(): string
     {
         return 'https://api.telegram.org/bot' . $this->token;
     }
