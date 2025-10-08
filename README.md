@@ -1,5 +1,8 @@
 # php telegram bot
 
+Телеграм бот на чистом php, без 2х десяток других сторонних библиотек.
+Подойдёт для любого фреймворка (можно оформить как модуль или сервис) или другого проекта.
+
 ## Установка
 
 Run:
@@ -40,6 +43,7 @@ php composer.phar update
 | deleteMessage(int $chat_id, int $message_id) | Удалить сообщение |
 | deleteMessages(int $chat_id, array $message_id) | Удалить сообщения |
 | sendInlineResults(InlineQuery $query, array $results) | Ответ на inline-запрос |
+| | |
 | getFileInfo(string $file_id) | Получить информацию о файле и ссылку для скачивания |
 | downloadFileById(string $file_id, string $savePath) | Скачать файл по его ид |
 | downloadFileByUrl(string $url, string $savePath) | Скачать файл по url |
@@ -59,9 +63,10 @@ php composer.phar update
 ### Планы
 
 - &#x2611; Обработка `inline_query` сообщений
-- &#x2610; Обработка api mini app
-- &#x2610; Отдельные методы отправки для каждого типа файла (видео, аудио, стикеров и тд)
+- &#x2611; Отправка фото/изображений
 - &#x2610; Массовая отправка фото (галереи)
+- &#x2610; Отдельные методы отправки для каждого типа файла (видео, аудио, стикеров и тд)
+- &#x2610; Обработка api mini app
 - &#x2610; Массовая отправка других типов файлов (_если возможно_)
 - &#x2610; Доработка шаблонов ответа для `inline_query`
 - &#x2610; Реакции на сообщения
@@ -78,7 +83,8 @@ php composer.phar update
 
 ### Регистрация webhook
 
-указывает Телеграму url, куда ему отправлять нам сообщения отправленные боту
+Указывает Телеграму url, куда ему отправлять нам сообщения отправленные боту
+
 ```php
 $bot = new Bot('123456:qwerty');
 $url = "https://ваш-домен.ru/webhook.php";
@@ -120,7 +126,7 @@ if ($chat_id = $bot->getChatId()) {
                 } else {
                     $text = 'Здравствуйте, товарищ!';
                 }
-                $resp = $bot->sendMessage([
+                $resp = $bot->sendMessage([ // сообщение с кнопками в меню
                     'chat_id' => $chat_id,
                     'text' => $text,
                     'reply_markup' => json_encode([
@@ -148,7 +154,7 @@ if ($chat_id = $bot->getChatId()) {
     } else if ($type == 'message') { // Простой текст
         $message = $bot->getText();
         switch ($message) {
-            case 'Button 1':
+            case 'Button 1': // реакция на кнопки (имя кнопок из меню отправляються как текст)
             case 'Button 2':
                 $resp = $bot->sendMessage('Button =)');
                 break;
@@ -185,6 +191,8 @@ if ($chat_id = $bot->getChatId()) {
 }
 ```
 
+![Ekeyboard.png](doc/keyboard.png)
+
 ## Работа с файлами
 
 ### Отправить/загрузить файлы в чат
@@ -208,6 +216,8 @@ if (file_exists($file_path)) {
 
 ### Повторно отправить файл используя ид телеграма
 
+При получении или отправки, мы получаем ид файла, которое можем использовать для отправки этого фойла ещё раз, без необходимость повторной его загрузки.
+
 ```php
 $chat_id = $bot->getChatId();
 $file_id = "FILE_ID_ОТ_ТЕЛЕГРАМ";
@@ -226,6 +236,8 @@ if (file_exists($file_path)) {
 ```
 
 ### Отправить несколько фото (до 10)
+
+> _Пример, в будующем оптимизирую_ =)
 
 ```php
 $chat_id = $bot->getChatId();
@@ -291,6 +303,10 @@ if ($type != 'photo') {
 ```
 
 ## inline_keyboard и callback_query
+
+Интерактивные кнопки и реакция на них
+
+![inline_keyboard.png](doc/inline_keyboard.png)
 
 ```php
 $type = $bot->getType();
@@ -361,8 +377,10 @@ if ($type == 'bot_command') {
 
 ## inline_query
 
-в разработке...
-https://botphp.ru/docs/api#inlinequeryresult
+> в разработке... https://botphp.ru/docs/api#inlinequeryresult
+
+![inline_query.png](doc/inline_query.png)
+
 ```php
 $bot = new Bot('123456:qwerty');
 $type = $bot->getType();
@@ -413,7 +431,13 @@ if ($type == 'inline_query') {
 }
 ```
 
+![inline_query_2.png](doc/inline_query_2.png)
+
 ## MiniApp
+
+> Мини pwa web приложение запускаемоев в самом телеграме
+
+Получение и валидация полученых данных при запуске приложения:
 
 ```html
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
