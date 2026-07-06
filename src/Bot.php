@@ -41,6 +41,7 @@ class Bot
      * @var array
      */
     public array $data = [];
+    public array $proxy = [];
     public int|null $update_id = null;
     /**
      * @var Message|null
@@ -65,6 +66,7 @@ class Bot
      *  'bot_token' => $bot_token, 
      *  'bot_name' => 'MyBot'
      *  'admin_id' => 123456
+     *  'proxy' => ['host','port','username','password'] // socks5 (test)
      * ]);
      * ```
      * @param string|array $parama
@@ -75,6 +77,7 @@ class Bot
             $this->token = $parama['bot_token'];
             $this->bot_name = $parama['bot_name'] ?? '';
             $this->admin_id = $parama['admin_id'] ?? null;
+            $this->proxy = $parama['proxy'] ?? null;
         } else {
             $this->token = $parama;
         }
@@ -443,6 +446,14 @@ class Bot
 
             curl_setopt($ch, CURLOPT_FILE, $fp);
             curl_setopt($ch, CURLOPT_HEADER, 0);
+            if ($this->proxy) {
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+                curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
+                if (isset($this->proxy[2]) && isset($this->proxy[3])) {
+                    curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy[2] . ':' . $this->proxy[3]);
+                }
+            }
 
             curl_exec($ch);
             curl_close($ch);
@@ -466,6 +477,14 @@ class Bot
 
         curl_setopt($ch, CURLOPT_FILE, $fp);
         curl_setopt($ch, CURLOPT_HEADER, 0);
+        if ($this->proxy) {
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+            curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
+            if (isset($this->proxy[2]) && isset($this->proxy[3])) {
+                curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy[2] . ':' . $this->proxy[3]);
+            }
+        }
 
         curl_exec($ch);
         curl_close($ch);
@@ -487,14 +506,25 @@ class Bot
     public function sendApiQuery(string $method, $data = [], bool $raw = false): Response
     {
         $ch = curl_init($this->getBaseBotUrl() . '/' . $method);
-        curl_setopt_array($ch, [
+        $setopt = [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $raw ? $data : http_build_query($data),
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
             CURLOPT_TIMEOUT => 10
-        ]);
+        ];
+        if ($this->proxy) {
+            $setopt[CURLOPT_FOLLOWLOCATION] = false;
+            $setopt[CURLOPT_TIMEOUT] = 15;
+            $setopt[CURLOPT_CONNECTTIMEOUT] = 5;
+            $setopt[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5_HOSTNAME;
+            $setopt[CURLOPT_PROXY] = $this->proxy[0] . ':' . $this->proxy[1];
+            if (isset($this->proxy[2]) && isset($this->proxy[3])) {
+                $setopt[CURLOPT_PROXYUSERPWD] = $this->proxy[2] . ':' . $this->proxy[3];
+            }
+        }
+        curl_setopt_array($ch, $setopt);
         $response = curl_exec($ch);
         curl_close($ch);
         try {
@@ -539,6 +569,14 @@ class Bot
     {
         $ch = curl_init($this->getBaseBotUrl() . '/deleteWebhook');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        if ($this->proxy) {
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+            curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
+            if (isset($this->proxy[2]) && isset($this->proxy[3])) {
+                curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy[2] . ':' . $this->proxy[3]);
+            }
+        }
         $response = curl_exec($ch);
         curl_close($ch);
         try {
