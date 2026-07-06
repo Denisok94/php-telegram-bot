@@ -475,20 +475,43 @@ class Bot
         $ch = curl_init($url);
         $fp = fopen($savePath, 'wb');
 
-        curl_setopt($ch, CURLOPT_FILE, $fp);
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        if ($this->proxy) {
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
-            curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
-            if (isset($this->proxy[2]) && isset($this->proxy[3])) {
-                curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy[2] . ':' . $this->proxy[3]);
-            }
+        if ($fp === false) {
+            throw new \RuntimeException('Failed to open file for writing: ' . $savePath);
         }
 
-        curl_exec($ch);
-        curl_close($ch);
-        fclose($fp);
+        try {
+            curl_setopt_array($ch, [
+                CURLOPT_FILE          => $fp,
+                CURLOPT_HEADER        => false,
+                CURLOPT_FOLLOWLOCATION => false, // обычно для скачивания файлов лучше отключить
+                CURLOPT_TIMEOUT       => 15,
+                CURLOPT_CONNECTTIMEOUT => 5,
+            ]);
+
+            if ($this->proxy) {
+                curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+                curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
+                if (isset($this->proxy[2], $this->proxy[3]) && $this->proxy[2] !== '' && $this->proxy[3] !== '') {
+                    curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy[2] . ':' . $this->proxy[3]);
+                }
+            }
+
+            $success = curl_exec($ch);
+
+            if ($success === false) {
+                $error = curl_error($ch);
+                throw new \RuntimeException('Download failed: ' . $error);
+            }
+
+            // Опционально: проверить HTTP‑код, чтобы не сохранить 404 как файл
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($httpCode !== 200) {
+                throw new \RuntimeException('Unexpected HTTP code: ' . $httpCode);
+            }
+        } finally {
+            curl_close($ch);
+            fclose($fp);
+        }
     }
 
     //----------------------------
