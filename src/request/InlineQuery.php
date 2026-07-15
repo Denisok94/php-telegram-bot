@@ -8,11 +8,8 @@ use denisok94\telegram\model\From;
  * Summary of InlineQuery
  * https://botphp.ru/docs/api#inlinequery
  */
-class InlineQuery
+class InlineQuery extends Event
 {
-    /** уникальный идентификатор запроса */
-    public string $id;
-    public From $from;
     /** текст запроса пользователя */
     public string $query;
     /** смещение для постраничной навигации */

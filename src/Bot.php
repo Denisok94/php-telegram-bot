@@ -6,6 +6,7 @@ use stdClass;
 use Exception, Throwable;
 use denisok94\telegram\Response;
 use denisok94\telegram\request\Message;
+use denisok94\telegram\request\Event;
 use denisok94\telegram\request\CallbackQuery;
 use denisok94\telegram\request\InlineQuery;
 use denisok94\telegram\inline\InlineResultInterface;
@@ -49,7 +50,7 @@ class Bot
      */
     public Message|null $message = null;
     /**
-     * @var CallbackQuery|InlineQuery|null
+     * @var CallbackQuery|InlineQuery|Event|null
      */
     public $event = null;
     /**
@@ -158,7 +159,7 @@ class Bot
 
     /**
      * Событие от пользователя
-     * @return CallbackQuery|InlineQuery|null
+     * @return CallbackQuery|InlineQuery|Event|null
      */
     public function getEvent()
     {
@@ -551,7 +552,7 @@ class Bot
             'timeout' => 30,    // Долгий опрос на 30 секунд
             'allowed_updates' => json_encode(['message', 'callback_query']) // Только сообщения определённого типа
         ], $params);
-        /** @var Message[]|CallbackQuery[]|InlineQuery[] */
+        /** @var Message[]|Event[] */
         $messages = [];
         $result = $this->sendApiQuery('getUpdates');
         if ($result->ok) {

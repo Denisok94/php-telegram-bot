@@ -8,10 +8,8 @@ use denisok94\telegram\request\Message;
 /**
  * Summary of CallbackQuery
  */
-class CallbackQuery
+class CallbackQuery extends Event
 {
-    public string $id;
-    public From $from;
     public Message|null $message = null;
     public string $chat_instance;
     public string $data;
