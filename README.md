@@ -137,6 +137,33 @@ if ($chat_id = $bot->getChatId()) {
                 $resp = $bot->sendMessage('Чем я могу Вам помочь?');
                 break;
         }
+        // или
+        $command = new \denisok94\telegram\components\Command($bot);
+        $command->addStart(function (\denisok94\telegram\request\Message $message, Bot $bot) {
+            // Получили текст start и проверяем, от админа сообщение или нет
+            $text = $bot->isAdmin() ? 'Привет, создатель!' : 'Здравствуйте, товарищ!';
+            return $bot->sendMessage([
+                'chat_id' => $message->chat->id,
+                'text' => $text,
+                'reply_markup' => json_encode([
+                    'keyboard' => [
+                        [
+                            [
+                                'text' => 'Button 1',
+                                'callback_data' => 'keyboard_test_2',
+                            ],
+                            [
+                                'text' => 'Button 2',
+                                'callback_data' => 'keyboard_test_2',
+                            ]
+                        ]
+                    ],
+                    'one_time_keyboard' => true,
+                    'resize_keyboard' => true,
+                ])
+            ]);
+        });
+        $resp = $command->parse();
     } else if ($type == 'message') { // Простой текст
         $message = $bot->getText();
         switch ($message) {

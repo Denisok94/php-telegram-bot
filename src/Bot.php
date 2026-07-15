@@ -102,7 +102,7 @@ class Bot
         return $this;
     }
 
-    public function parseMessage(): self
+    private function parseMessage(): self
     {
         if (isset($this->data['update_id'])) {
             $this->update_id = $this->data['update_id'];
@@ -142,6 +142,24 @@ class Bot
             }
         }
         return $this;
+    }
+
+    /**
+     * Сообщение от пользователя
+     * @return Message|null
+     */
+    public function getMessage(): ?Message
+    {
+        return $this->message;
+    }
+
+    /**
+     * Событие от пользователя
+     * @return CallbackQuery|InlineQuery|null
+     */
+    public function getEvent()
+    {
+        return $this->event;
     }
 
     /**

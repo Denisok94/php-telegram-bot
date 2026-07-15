@@ -18,7 +18,7 @@ class Message
     public int $message_id;
     public int $date;
     /**
-     * @var string message|document|bot_command|object_message
+     * @var string message|document|bot_command|object_message|sticker
      */
     public string $type = 'message';
     public From $from;
