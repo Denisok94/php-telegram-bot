@@ -2,6 +2,7 @@
 
 namespace denisok94\telegram;
 
+use stdClass;
 use Exception, Throwable;
 use denisok94\telegram\Response;
 use denisok94\telegram\request\Message;
@@ -69,17 +70,17 @@ class Bot
      *  'proxy' => ['host','port','username','password'] // socks5 (test)
      * ]);
      * ```
-     * @param string|array $parama
+     * @param string|array $params
      */
-    public function __construct($parama)
+    public function __construct($params)
     {
-        if (is_array($parama)) {
-            $this->token = $parama['bot_token'];
-            $this->bot_name = $parama['bot_name'] ?? '';
-            $this->admin_id = $parama['admin_id'] ?? null;
-            $this->proxy = $parama['proxy'] ?? null;
+        if (is_array($params)) {
+            $this->token = $params['bot_token'];
+            $this->bot_name = $params['bot_name'] ?? '';
+            $this->admin_id = $params['admin_id'] ?? null;
+            $this->proxy = $params['proxy'] ?? null;
         } else {
-            $this->token = $parama;
+            $this->token = $params;
         }
     }
 
@@ -512,6 +513,41 @@ class Bot
             curl_close($ch);
             fclose($fp);
         }
+    }
+
+    //----------------------------
+
+    /**
+     * Получить сообщения для бота
+     * @param array $params
+     * @return stdClass
+     */
+    public function getUpdates($params = [])
+    {
+        $params = array_merge([
+            'offset' => 0,      // Идентификатор первого обновления (далее update_id + 1)
+            'limit' => 10,      // Максимум 10 обновлений за раз
+            'timeout' => 30,    // Долгий опрос на 30 секунд
+            'allowed_updates' => json_encode(['message', 'callback_query']) // Только сообщения определённого типа
+        ], $params);
+        /** @var Message[]|CallbackQuery[]|InlineQuery[] */
+        $messages = [];
+        $result = $this->sendApiQuery('getUpdates');
+        if ($result->ok) {
+            foreach ($result->result as $key => $message) {
+                $this->data = $message;
+                $this->parseMessage();
+                if ($this->event) {
+                    $messages[$this->update_id] = $this->event;
+                } else {
+                    $messages[$this->update_id] = $this->message;
+                }
+            }
+        }
+        $updates = new stdClass();
+        $updates->result = $result;
+        $updates->messages = $messages;
+        return $updates;
     }
 
     //----------------------------
