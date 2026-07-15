@@ -38,6 +38,11 @@ class Message
     public ?Audio $audio = null;
     public ?array $entities = null;
     public ?array $sticker = null;
+    /** 
+     * Все остальные данные, которые бот ещё не обрабатывает
+     * @var mixed|null 
+     */
+    public $other = null;
 
     public function __construct(array $data)
     {
