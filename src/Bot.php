@@ -130,6 +130,9 @@ class Bot
                         break;
                     case 'callback_query':
                         $this->event = new CallbackQuery($this->data['callback_query']);
+                        if ($this->event->message) {
+                            $this->event->message->type = $this->type;
+                        }
                         $this->message = $this->event->message;
                         break;
                     case 'inline_query':
