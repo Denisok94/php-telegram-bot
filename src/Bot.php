@@ -470,6 +470,7 @@ class Bot
             curl_setopt($ch, CURLOPT_FILE, $fp);
             curl_setopt($ch, CURLOPT_HEADER, 0);
             if ($this->proxy) {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
                 curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
@@ -512,6 +513,7 @@ class Bot
             ]);
 
             if ($this->proxy) {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
                 curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
                 if (isset($this->proxy[2], $this->proxy[3]) && $this->proxy[2] !== '' && $this->proxy[3] !== '') {
@@ -589,12 +591,13 @@ class Bot
         $setopt = [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $raw ? $data : http_build_query($data),
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
             CURLOPT_TIMEOUT => 10
         ];
         if ($this->proxy) {
+            $setopt[CURLOPT_SSL_VERIFYPEER] = false;
             $setopt[CURLOPT_FOLLOWLOCATION] = false;
             $setopt[CURLOPT_TIMEOUT] = 15;
             $setopt[CURLOPT_CONNECTTIMEOUT] = 5;
@@ -650,6 +653,7 @@ class Bot
         $ch = curl_init($this->getBaseBotUrl() . '/deleteWebhook');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         if ($this->proxy) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
             curl_setopt($ch, CURLOPT_PROXY, $this->proxy[0] . ':' . $this->proxy[1]);
