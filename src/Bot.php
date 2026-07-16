@@ -546,15 +546,14 @@ class Bot
      */
     public function getUpdates($params = [])
     {
-        $params = array_merge([
+        /** @var Message[]|Event[] */
+        $messages = [];
+        $result = $this->sendApiQuery('getUpdates', array_merge([
             'offset' => 0,      // Идентификатор первого обновления (далее update_id + 1)
             'limit' => 10,      // Максимум 10 обновлений за раз
             'timeout' => 30,    // Долгий опрос на 30 секунд
             'allowed_updates' => json_encode(['message', 'callback_query']) // Только сообщения определённого типа
-        ], $params);
-        /** @var Message[]|Event[] */
-        $messages = [];
-        $result = $this->sendApiQuery('getUpdates');
+        ], $params));
         if ($result->ok) {
             foreach ($result->result as $key => $message) {
                 $this->data = $message;
