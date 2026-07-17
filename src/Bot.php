@@ -611,11 +611,27 @@ class Bot
         $response = curl_exec($ch);
         curl_close($ch);
         try {
-            return new Response(json_decode($response, true));
+            if ($response === false) {
+                throw new Exception(curl_error($ch));
+            } else if ($this::isJson($response)) {
+                return new Response(json_decode($response, true));
+            } else {
+                throw new Exception("Не корректный ответ от сервера");
+            }
         } catch (Throwable $th) {
-            // curl_error($ch);
-            throw $th;
+            return new Response([
+                'ok' => false,
+                'result' => [],
+                'error_code' => 500,
+                'description' => $th->getMessage(),
+            ]);
         }
+    }
+
+    private static function isJson(string $json)
+    {
+        json_decode($json, true);
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**
