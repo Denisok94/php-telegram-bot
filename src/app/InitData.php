@@ -86,7 +86,7 @@ class InitData
                 $array[] = $key . '=' . $value;
             }
         }
-        return implode(PHP_EOL, $array);
+        return implode("\n", $array);
     }
 
     /**
